@@ -17,24 +17,23 @@ import sqlite3
 conn = sqlite3.connect("memory.db", check_same_thread=False)
 memory = SqliteSaver(conn)
 
-# 4. Crea el agente CON MEMORIA
+# 4. Crea el agente SIN MEMORIA (temporal para probar Calendar)
 agent = create_agent(
     model="gpt-4o-mini",
     tools=[get_weather, get_calendar_events],
-    system_prompt="Eres un asistente útil. Recuerda lo que te dicen.",
-    checkpointer=memory,  # ← CLAVE: Añade memoria
+    system_prompt="Eres un asistente útil.",
+    # checkpointer=memory,  # ← Deshabilitado temporalmente
 )
 
 # 5. Ejecuta el agente CON thread_id (sesión única)
 if __name__ == "__main__":
-    thread_id = "user_paul_session"  # ID único por usuario
+    thread_id = "calendar_test_session"  # ID único por usuario
     
     # Prueba Calendar
     print("\n=== PRUEBA CALENDAR ===")
     sys.stdout.flush()
     result = agent.invoke(
-        {"messages": [{"role": "user", "content": "¿Qué eventos tengo próximamente?"}]},
-        config={"configurable": {"thread_id": thread_id}}
+        {"messages": [{"role": "user", "content": "¿Qué eventos tengo próximamente?"}]}
     )
     print(result["messages"][-1].content)
     sys.stdout.flush()

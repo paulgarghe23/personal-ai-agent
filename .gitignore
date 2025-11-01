@@ -5,6 +5,8 @@ backend/config/token.json
 
 # SQLite Database (memoria local)
 memory.db
+memory.db-shm
+memory.db-wal
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -21,10 +21,13 @@ def get_calendar_events() -> str:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
+            print("\n🔐 AUTENTICACIÓN NECESARIA")
+            print("Se abrirá el navegador automáticamente...")
             flow = InstalledAppFlow.from_client_secrets_file(
-                'backend/config/client_secret_627326261971-28tfa9ej19ukolbu3d1ld2o88omlqn4r.apps.googleusercontent.com.json',
+                'backend/config/credentials.json',
                 SCOPES)
-            creds = flow.run_local_server(port=0)
+            print("Si no se abre, copia esta URL:")
+            creds = flow.run_local_server(port=0, open_browser=True)
         
         with open('backend/config/token.json', 'w') as token:
             token.write(creds.to_json())
