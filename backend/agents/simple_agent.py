@@ -2,6 +2,7 @@ from langchain.agents import create_agent
 from langgraph.checkpoint.sqlite import SqliteSaver
 from dotenv import load_dotenv
 import sys
+from backend.tools.calendar_tools import get_calendar_events
 
 # 1. Carga API keys desde .env
 load_dotenv()
@@ -19,7 +20,7 @@ memory = SqliteSaver(conn)
 # 4. Crea el agente CON MEMORIA
 agent = create_agent(
     model="gpt-4o-mini",
-    tools=[get_weather],
+    tools=[get_weather, get_calendar_events],
     system_prompt="Eres un asistente útil. Recuerda lo que te dicen.",
     checkpointer=memory,  # ← CLAVE: Añade memoria
 )
@@ -28,23 +29,13 @@ agent = create_agent(
 if __name__ == "__main__":
     thread_id = "user_paul_session"  # ID único por usuario
     
-    # Primera conversación
-    print("\n=== CONVERSACIÓN 1 ===")
-    sys.stdout.flush()  # Fuerza mostrar en debug
+    # Prueba Calendar
+    print("\n=== PRUEBA CALENDAR ===")
+    sys.stdout.flush()
     result = agent.invoke(
-        {"messages": [{"role": "user", "content": "Hola, me llamo Paul"}]},
-        config={"configurable": {"thread_id": thread_id}}  # ← Usa sesión
+        {"messages": [{"role": "user", "content": "¿Qué eventos tengo próximamente?"}]},
+        config={"configurable": {"thread_id": thread_id}}
     )
     print(result["messages"][-1].content)
-    sys.stdout.flush()  # Fuerza mostrar en debug
-    
-    # Segunda conversación (debería recordar)
-    print("\n=== CONVERSACIÓN 2 ===")
-    sys.stdout.flush()  # Fuerza mostrar en debug
-    result = agent.invoke(
-        {"messages": [{"role": "user", "content": "¿Cómo me llamo?"}]},
-        config={"configurable": {"thread_id": thread_id}}  # ← Misma sesión
-    )
-    print(result["messages"][-1].content)
-    sys.stdout.flush()  # Fuerza mostrar en debug
+    sys.stdout.flush()
     
