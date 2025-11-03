@@ -11,11 +11,16 @@ logger = logging.getLogger(__name__)
 
 SCOPES = ['https://www.googleapis.com/auth/calendar']  # Lectura Y escritura
 
+# Cache para evitar repetir autenticación y obtención de calendarios
+_service_cache = None
+_calendars_cache = None
+
 def _authenticate():
-    """Autentica con Google Calendar."""
+    """Autentica con Google Calendar (cacheado, solo loguea cuando es necesario)."""
+    global _service_cache
+    
     creds = None
     if os.path.exists('backend/config/token.json'):
-        logger.info("📁 Token encontrado, cargando credenciales...")
         creds = Credentials.from_authorized_user_file('backend/config/token.json', SCOPES)
     
     if not creds or not creds.valid:
@@ -29,12 +34,33 @@ def _authenticate():
         with open('backend/config/token.json', 'w') as token:
             token.write(creds.to_json())
         logger.info("✅ Credenciales guardadas correctamente")
-    else:
-        logger.info("✅ Credenciales válidas, usando token existente")
+        # Limpia cache si hubo cambios en credenciales
+        _service_cache = None
+    # Si creds son válidas, no logueamos (evita spam)
+    
     return creds
 
-def _get_calendar_ids(service):
-    """Obtiene IDs de calendarios por nombre."""
+def _get_service():
+    """Obtiene el servicio de Google Calendar (cacheado)."""
+    global _service_cache
+    
+    if _service_cache is None:
+        _service_cache = build('calendar', 'v3', credentials=_authenticate())
+    
+    return _service_cache
+
+def _get_calendar_ids(service=None):
+    """Obtiene IDs de calendarios por nombre (cacheado)."""
+    global _calendars_cache
+    
+    # Si ya está cacheado, devuelve el cache
+    if _calendars_cache is not None:
+        return _calendars_cache
+    
+    # Si no hay service, lo obtiene
+    if service is None:
+        service = _get_service()
+    
     calendar_list = service.calendarList().list().execute()
     all_calendars = calendar_list.get('items', [])
     logger.info(f"📋 Google devolvió {len(all_calendars)} calendarios totales:")
@@ -53,6 +79,9 @@ def _get_calendar_ids(service):
             calendars.append((cal_id, 'Eventos'))
     
     logger.info(f"📅 Calendarios seleccionados para uso: {[name for _, name in calendars]}")
+    
+    # Guarda en cache
+    _calendars_cache = calendars
     return calendars
 
 def _log_events_preview(events, label=""):
@@ -94,11 +123,11 @@ def _filter_by_hour(events, start_hour, end_hour):
 
 def get_calendar_events() -> str:
     """Obtiene TODOS los eventos futuros entre 6h-24h de Paul y Eventos."""
-    service = build('calendar', 'v3', credentials=_authenticate())
+    service = _get_service()
     now = datetime.utcnow().isoformat() + 'Z'
     
-    # Obtiene calendarios dinámicamente
-    calendars = _get_calendar_ids(service)
+    # Obtiene calendarios dinámicamente (cacheado)
+    calendars = _get_calendar_ids()
     
     all_events = []
     for cal_id, cal_name in calendars:
@@ -141,11 +170,11 @@ def get_calendar_events() -> str:
 
 def get_reminders() -> str:
     """Obtiene eventos/recordatorios entre 0h-6h de Paul y Eventos."""
-    service = build('calendar', 'v3', credentials=_authenticate())
+    service = _get_service()
     now = datetime.utcnow().isoformat() + 'Z'
     
-    # Obtiene calendarios dinámicamente
-    calendars = _get_calendar_ids(service)
+    # Obtiene calendarios dinámicamente (cacheado)
+    calendars = _get_calendar_ids()
     
     all_events = []
     for cal_id, cal_name in calendars:
