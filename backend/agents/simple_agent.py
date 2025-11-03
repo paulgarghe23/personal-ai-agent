@@ -1,8 +1,16 @@
 from langchain.agents import create_agent
 from langgraph.checkpoint.sqlite import SqliteSaver
 from dotenv import load_dotenv
+import logging
 import sys
 from backend.tools.calendar_tools import get_calendar_events, get_reminders
+
+# Configurar logging para ver todo el proceso
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(message)s',
+    datefmt='%H:%M:%S'
+)
 
 # 1. Carga API keys desde .env
 load_dotenv()
@@ -28,7 +36,7 @@ if __name__ == "__main__":
     print("\n=== PRUEBA CALENDAR ===")
     sys.stdout.flush()
     result = agent.invoke(
-        {"messages": [{"role": "user", "content": "¿Qué eventos tengo próximamente?"}]}
+        {"messages": [{"role": "user", "content": "¿Qué tareas tengo próximamente en mis calendarios?"}]}
     )
     print(result["messages"][-1].content)
     sys.stdout.flush()
