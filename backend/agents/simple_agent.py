@@ -2,7 +2,7 @@ from langchain.agents import create_agent
 from langgraph.checkpoint.sqlite import SqliteSaver
 from dotenv import load_dotenv
 import sys
-from backend.tools.calendar_tools import get_calendar_events
+from backend.tools.calendar_tools import get_calendar_events, get_reminders
 
 # 1. Carga API keys desde .env
 load_dotenv()
@@ -15,7 +15,7 @@ memory = SqliteSaver(conn)
 # 3. Crea el agente SIN MEMORIA (temporal para probar Calendar)
 agent = create_agent(
     model="gpt-4o-mini",
-    tools=[get_calendar_events],
+    tools=[get_calendar_events, get_reminders],
     system_prompt="Eres un asistente útil.",
     # checkpointer=memory,  # ← Deshabilitado temporalmente
 )
